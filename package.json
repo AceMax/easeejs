@@ -1,0 +1,23 @@
+{
+  "name": "easeejs",
+  "version": "0.0.1",
+  "description": "Node.js module to access easee EV charging cloud API.",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AceMax/easeejs.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/AceMax/easeejs/issues"
+  },
+  "homepage": "https://github.com/AceMax/easeejs#readme",
+  "dependencies": {
+    "node-fetch": "^2.6.1"
+  }
+}
