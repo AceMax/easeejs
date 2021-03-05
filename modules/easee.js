@@ -10,7 +10,6 @@ const conf  = JSON.parse(fs.readFileSync(__dirname + '/../conf/config.json'));
 var accessToken = null;
 
 async function authenticate() {
-
   if (fs.existsSync(__dirname + '/../data/auth.json')) {
     var authData = JSON.parse(fs.readFileSync(__dirname + '/../data/auth.json'));
 
@@ -46,6 +45,7 @@ async function authenticate() {
       let result = await response.json();
 
       if (response.status == 200) {
+        accessToken = result.accessToken;
         var data = {
           accessToken : result.accessToken,
           expiresIn   : result.expiresIn,
@@ -55,14 +55,17 @@ async function authenticate() {
         };
 
         fs.writeFileSync(__dirname + '/../data/auth.json', JSON.stringify(data, null, 4), (err) => {
-            if (err) {
-                throw err;
-            }
+          if (err) {
+            throw err;
+          }
         });
+      } else {
+        console.log("Could not refresh Auth Token!");
       }
     }
   } else {
     // Auth data file does not exist, create inital login
+    console.log("Initiate first time login");
     var payLoad = {
       userName: conf.userName,
       password: conf.password
@@ -76,7 +79,6 @@ async function authenticate() {
     let result = await response.json();
 
     if (response.status == 200) {
-
       var data = {
         accessToken : result.accessToken,
         expiresIn   : result.expiresIn,
@@ -86,9 +88,9 @@ async function authenticate() {
       };
 
       fs.writeFileSync(__dirname + '/../data/auth.json', JSON.stringify(data, null, 4), (err) => {
-          if (err) {
-              throw err;
-          }
+        if (err) {
+          throw err;
+        }
       });
     }
   }
@@ -102,7 +104,7 @@ async function authenticate() {
  * @param {Object} payLoad JS object to post.
  */
 async function postJson(url, payLoad) {
-  let auth     = authenticate();
+  let auth     = await authenticate();
   let response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json",
@@ -125,7 +127,7 @@ async function postJson(url, payLoad) {
  * @param {string} url     URL to post to.
  */
 async function getJson(url) {
-  let auth     = authenticate();
+  let auth     = await authenticate();
   let response = await fetch(url, {
     method: "GET",
     headers: { "Content-Type": "application/json",
