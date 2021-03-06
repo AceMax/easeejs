@@ -79,6 +79,7 @@ async function authenticate() {
     let result = await response.json();
 
     if (response.status == 200) {
+      accessToken = result.accessToken;
       var data = {
         accessToken : result.accessToken,
         expiresIn   : result.expiresIn,
