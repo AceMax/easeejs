@@ -15,32 +15,20 @@ async function authenticate() {
 
     let accessTokenExpires = new Date(authData.expires);
 
-    var date    = new Date(accessTokenExpires * 1000);
-    var year    = date.getFullYear();
-    var month   = "0" + (date.getMonth() + 1);
-    var day     = "0" + date.getDate();
-    var hours   = "0" + date.getHours();
-    var minutes = "0" + date.getMinutes();
-    var seconds = "0" + date.getSeconds();
-
-    var formattedTime = year + '-' + month.substr(-2) + '-' + day.substr(-2) + ' ' + hours.substr(-2) + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
-
     if (authData.expires > Math.floor(Date.now() / 1000)) {
       accessToken = authData.accessToken;
-
-      // console.log("Using existing and valid Access Token which expires at: " + formattedTime);
     } else {
       //Refresh token
-      console.log("Need to refresh Access token using Refresh token");
+      console.log("Need to refresh easee Access token using Refresh token");
       var payLoad = {
         accessToken : authData.accessToken,
         refreshToken: authData.refreshToken
       };
 
       let response = await fetch(conf.apiHost + '/api/accounts/refresh_token', {
-        method: "POST",
+        method : "post",
         headers: {"Content-Type": "application/json"},
-        body  : JSON.stringify(payLoad)
+        body   : JSON.stringify(payLoad)
       });
       let result = await response.json();
 
@@ -60,7 +48,7 @@ async function authenticate() {
           }
         });
       } else {
-        console.log("Could not refresh Auth Token!");
+        console.log("Could not easee refresh Auth Token!");
       }
     }
   } else {
@@ -72,9 +60,9 @@ async function authenticate() {
     };
 
     let response = await fetch(conf.apiHost + '/api/accounts/token', {
-      method: "POST",
+      method : "post",
       headers: {"Content-Type": "application/json"},
-      body  : JSON.stringify(payLoad)
+      body   : JSON.stringify(payLoad)
     });
     let result = await response.json();
 
@@ -107,13 +95,15 @@ async function authenticate() {
 async function postJson(url, payLoad) {
   let auth     = await authenticate();
   let response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json",
-               "Authorization": accessToken
+    method : 'post',
+    headers: {"Content-Type": "application/json",
+              "Authorization": "Bearer " + accessToken
     },
-    body  : JSON.stringify(payLoad)
+    body   : JSON.stringify(payLoad)
   });
-  let result = await response.json();
+  let result = await response.text();
+
+  // console.log(result);
 
   if (response.status == 200) {
     return result;
@@ -130,7 +120,7 @@ async function postJson(url, payLoad) {
 async function getJson(url) {
   let auth     = await authenticate();
   let response = await fetch(url, {
-    method: "GET",
+    method : "get",
     headers: { "Content-Type": "application/json",
                "Authorization": "Bearer " + accessToken
     }
@@ -171,6 +161,46 @@ async function getChargerState(chargerId) {
 }
 
 /**
+ * Get site Current limits
+ *
+ * @param {string} siteId    Site ID
+ * @param {string} circuitId Circuit ID
+ */
+async function getSiteCurrentLimits(siteId, circuitId) {
+  let currentLimits = await getJson(conf.apiHost + '/api/sites/' + siteId + '/circuits/' + circuitId + '/settings');
+  if (currentLimits) {
+    return currentLimits;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * Set site Current limits
+ *
+ * @param {string} siteId       Site ID
+ * @param {string} circuitId    Circuit ID
+ * @param {int}    currentLimit Current limit (in A)
+ */
+async function setSiteCurrentLimits(siteId, circuitId, currentLimit) {
+  const payLoad = {
+    maxCircuitCurrentP1: currentLimit,
+    maxCircuitCurrentP2: currentLimit,
+    maxCircuitCurrentP3: currentLimit,
+    offlineMaxCircuitCurrentP1: currentLimit,
+    offlineMaxCircuitCurrentP2: currentLimit,
+    offlineMaxCircuitCurrentP3: currentLimit
+  };
+
+  let currentLimits = await postJson(conf.apiHost + '/api/sites/' + siteId + '/circuits/' + circuitId + '/settings', payLoad);
+  if (currentLimits) {
+    return currentLimits;
+  } else {
+    return false;
+  }
+}
+
+/**
  * Get JSON data of all charging sessions the current day.
  *
  * @param {string} chargerId Charger ID (Like: EHxxxxxx)
@@ -190,7 +220,8 @@ async function getChargerDailyUsage(chargerId) {
   }
 }
 
-
 exports.getChargers          = getChargers;
 exports.getChargerState      = getChargerState;
 exports.getChargerDailyUsage = getChargerDailyUsage;
+exports.getSiteCurrentLimits = getSiteCurrentLimits;
+exports.setSiteCurrentLimits = setSiteCurrentLimits;
